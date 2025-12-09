@@ -1,0 +1,67 @@
+1）perf工具基础使用：
+
+不跑流量的时候，可以用perf看一下内存的读写有多少。
+
+# 方法1：通过 L2 缓存未命中事件计算内存带宽（最常用）
+perf stat -e l2d_cache_refill,inst_retired -a sleep 10
+# 方法2：直接监控内存读写事件（部分 ARM CPU 支持）
+perf stat -e dcache_loads,dcache_stores,dcache_load_misses,dcache_store_misses -a sleep 10
+
+经常使用的命令
+perf top -C 0 --call-graph fp,graph,0.5,caller,function
+
+
+
+2）以下是一些关于perf使用的知识：
+
+生成火焰图百度搜索：
+火焰图（Flame Graphs）的安装和基本用法  差分火焰图
+
+https://blog.csdn.net/weixin_30245867/article/details/102282170
+
+详细，并且有示例
+https://blog.csdn.net/qq_25072517/article/details/78433756
+
+差分火焰图：
+https://www.freesion.com/article/3959887552/
+
+
+# 峰哥发的生成火焰图
+perf script | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl > perf.svg
+
+
+
+# perf统计只是CPU使用时才统计，如果不使用cpu时，时间不会统计，这篇博客有解释
+https://www.cnblogs.com/andashu/p/6378000.html
+
+# 百度搜索 性能分析工具不能统计函数的真实消失时间吗
+https://jingyan.baidu.com/article/4f34706e1db156e387b56d01.html  #统计真实时间
+
+# 常用的性能优化工具
+perf, uftrace, trace-cmd
+
+
+# perf的使用简单程序示例，已经按步骤做过了
+https://blog.csdn.net/qq_34556414/article/details/107181155
+
+# 安装
+yum install perf
+
+# 由于需要到github下载可视化分析工具FlameGraph，所以要先安装git
+yum list git
+yum -y install git.x86_64
+git clone https://github.com/JaxYoun/FlameGraph.git
+mv FlameGraph fg  //方便起见，重命名FlameGraph目录
+
+# 采集、转换、可视化【root权限】
+perf record -F 99 -p 18733 -g -- sleep 30 #去掉后面的--sleep 10 就是一直采集到程序退出 
+perf script -i perf.data &> perf.unfold
+fg/stackcollapse-perf.pl perf.unfold &> perf.folded
+fg/flamegraph.pl perf.folded > perf.svg
+
+# 将perf.svg下载到本地用Chrome浏览器打开即可阅读。
+
+性能调优：
+https://blog.csdn.net/nodeman/article/details/80773273
+
+linux下的性能分析工具是perf
